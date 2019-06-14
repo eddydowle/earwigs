@@ -53,7 +53,7 @@ annotationsSimplified = annotationsSimplified %>% mutate(Celegan_BLASTP=gsub('\\
 annotationsSimplified$Celegan_BLASTP = gsub('"','',annotationsSimplified$Celegan_BLASTP)
 
 
-
+head(annotationsSimplified$Dmel_BLASTX)
 #pull out and make a list of all unique Danio protein IDs, gsub the version (remove everything after '.'), remove 'NAs'
 protList <- annotationsSimplified$Dmel_BLASTX
 protList = gsub('\\..*','',protList)
@@ -71,30 +71,43 @@ protList
 listMarts()
 
 #Select database and dataset for each fish species
-ENSEMBL_Dm=useMart("ensembl", dataset="drerio_gene_ensembl")
-ENSEMBL_Ce=useMart("ensembl", dataset="oniloticus_gene_ensembl")
+ENSEMBL_Dm=useMart("ensembl", dataset="dmelanogaster_gene_ensembl")
+ENSEMBL_Ce=useMart("ensembl", dataset="celegans_gene_ensembl")
 
 ####To query the databases
 #attributes = those to retrieve, filters = input to query (i.e. gene names), values = values for filters (i.e. in gene_list) 
-listFilters(ENSEMBL_Dr)
-listFilters(ENSEMBL_On)
-listFilters(ENSEMBL_Lb)
+listFilters(ENSEMBL_Dm)
+listFilters(ENSEMBL_Ce)
+
 #useful: ensembl_gene_id  ensembl_peptide_id  external_gene_name  
 
-listAttributes(ENSEMBL_Dr)
+listAttributes(ENSEMBL_Dm)
 #useful: ensembl_gene_id  ensembl_peptide_id  external_gene_name  description
 
 ####RETRIEVE REQUIRED INFO:
 ####Use the Danio protein ID list 'protList' from Trinotate to generate table with extra data
-annotations_with_Dr <- getBM(attributes=c('external_gene_name', 'ensembl_gene_id', 'ensembl_peptide_id', 'description'),
+annotations_with_Dm <- getBM(attributes=c('external_gene_name', 'ensembl_gene_id', 'ensembl_peptide_id', 'description'),
                              filters='ensembl_peptide_id',
                              values = protList,
-                             mart = ENSEMBL_Dr)
+                             mart = ENSEMBL_Dm)
+
+colnames(annotations_with_Dm) <- paste("Dmel", colnames(annotations_with_Dm), sep = "_")
+colnames(annotations_with_Dm) <- paste("Dmel", colnames(annotations_with_Dm),"blastP", sep = "_")
+head(annotations_with_Dm)
+annotations_with_Ce <- getBM(attributes=c('external_gene_name', 'ensembl_gene_id', 'ensembl_peptide_id', 'description'),
+                             filters='ensembl_peptide_id',
+                             values = protList,
+                             mart = ENSEMBL_Ce)
+
+colnames(annotations_with_Ce) <- paste("Cele", colnames(annotations_with_Ce), sep = "_")
+colnames(annotations_with_Ce) <- paste("Cele", colnames(annotations_with_Ce),"blastP", sep = "_")
+head(annotations_with_Ce)
 
 #merge the extra Danio info with the Trinotate table
 #first, gsub out protein version 
-annotationsSimplified$Danio_blastx_ID = gsub('\\..*','',annotationsSimplified$Danio_blastx_ID)
-annotationsSimplified_Dr <- merge(annotationsSimplified, annotations_with_Dr, by.x="Danio_blastx_ID", by.y="ensembl_peptide_id", all.x=TRUE)
+#annotationsSimplified$Danio_blastx_ID = gsub('\\..*','',annotationsSimplified$Danio_blastx_ID)
+annotationsSimplified_Dr <- merge(annotationsSimplified, annotations_with_Dr, by.x="Dmel_BLASTX", by.y="Dmel_ensembl_peptide_id", all.x=TRUE)
+annotationsSimplified_Dr <- merge(annotationsSimplified, annotations_with_Ce, by.x="Celegan_BLASTX", by.y="Cele_ensembl_peptide_id", all.x=TRUE)
 head(annotationsSimplified_Dr)
 #re-order columns and export
 #annotationsSimplified_Dr <- annotationsSimplified_Dr[c(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,1,34,33,35)]
